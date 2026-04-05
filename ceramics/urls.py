@@ -30,4 +30,7 @@ urlpatterns = [
 
     # AI analysis endpoint
     path("api/analyze/", views.analyze_image_view, name="analyze-image"),
+
+    # Kiln IoT API
+    path("api/kilns/<int:number>/", views.kiln_update_api, name="kiln-update"),
 ]

@@ -1,7 +1,9 @@
 import calendar
+import json
 import logging
 from datetime import date
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -9,6 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.text import slugify
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import LoginRequiredMixin
 
@@ -16,7 +19,7 @@ from wagtail.models import Page
 
 from .ai_service import analyze_ceramic_image
 from .forms import CollectionForm, PieceForm, PieceUpdateForm, ProfileForm
-from .models import CollectionIndexPage, CollectionPage, PiecePage, PieceUpdateImage, UserProfile
+from .models import CollectionIndexPage, CollectionPage, Kiln, PiecePage, PieceUpdateImage, UserProfile
 
 logger = logging.getLogger(__name__)
 
@@ -310,6 +313,70 @@ def analyze_image_view(request):
 
     result = analyze_ceramic_image(image_file.read(), piece_title, media_type)
     return JsonResponse(result)
+
+
+# ---------------------------------------------------------------------------
+# Kiln IoT API
+# ---------------------------------------------------------------------------
+
+_VALID_STATUSES = {"idle", "firing", "cooling", "done"}
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def kiln_update_api(request, number):
+    """
+    IoT hook — update a kiln's temperature / cone / status.
+
+    Authentication: Bearer token matching settings.KILN_API_KEY
+
+    Request body (JSON):
+        {"temp": 2287, "cone_fire": "Cone 10", "status": "firing", "notes": "..."}
+
+    All keys are optional; only provided keys are updated.
+    """
+    api_key = getattr(settings, "KILN_API_KEY", "")
+    if api_key:
+        auth = request.headers.get("Authorization", "")
+        if auth != f"Bearer {api_key}":
+            return JsonResponse({"error": "Unauthorized"}, status=401)
+
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    kiln = get_object_or_404(Kiln, number=number)
+
+    if "temp" in payload:
+        try:
+            kiln.temp = float(payload["temp"])
+        except (TypeError, ValueError):
+            return JsonResponse({"error": "'temp' must be a number"}, status=400)
+
+    if "cone_fire" in payload:
+        kiln.cone_fire = str(payload["cone_fire"])[:20]
+
+    if "status" in payload:
+        if payload["status"] not in _VALID_STATUSES:
+            return JsonResponse(
+                {"error": f"'status' must be one of {sorted(_VALID_STATUSES)}"}, status=400
+            )
+        kiln.status = payload["status"]
+
+    if "notes" in payload:
+        kiln.notes = str(payload["notes"])
+
+    kiln.save()
+
+    return JsonResponse({
+        "ok": True,
+        "kiln": number,
+        "temp": kiln.temp,
+        "cone_fire": kiln.cone_fire,
+        "status": kiln.status,
+        "last_updated": kiln.last_updated.isoformat(),
+    })
 
 
 # ---------------------------------------------------------------------------

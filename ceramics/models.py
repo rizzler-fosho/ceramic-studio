@@ -181,3 +181,68 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"Profile({self.user.username})"
+
+
+class Kiln(models.Model):
+    """A physical kiln whose status can be pushed via the IoT API."""
+
+    STATUS_CHOICES = [
+        ("idle",    "Idle"),
+        ("firing",  "Firing"),
+        ("cooling", "Cooling"),
+        ("done",    "Done"),
+    ]
+
+    number    = models.PositiveSmallIntegerField(unique=True)
+    name      = models.CharField(max_length=100)
+    temp      = models.FloatField(default=0.0, help_text="Current temperature in °F")
+    cone_fire = models.CharField(max_length=20, blank=True)
+    status    = models.CharField(max_length=20, choices=STATUS_CHOICES, default="idle")
+    notes     = models.TextField(blank=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["number"]
+
+    def __str__(self):
+        return f"Kiln {self.number} — {self.name}"
+
+    @property
+    def temp_display(self):
+        return f"{self.temp:,.0f}°F"
+
+    @property
+    def temp_percent(self):
+        """Heat bar 0–100 % scaled to cone 10 max (~2381°F)."""
+        return min(100, max(0, round(self.temp / 2381 * 100)))
+
+    @property
+    def icon_color(self):
+        return {
+            "firing":  "text-orange-500",
+            "cooling": "text-blue-400",
+            "done":    "text-green-500",
+            "idle":    "text-stone-400",
+        }.get(self.status, "text-stone-400")
+
+    @property
+    def badge_class(self):
+        return {
+            "firing":  "bg-orange-100 text-orange-700",
+            "cooling": "bg-blue-100 text-blue-700",
+            "done":    "bg-green-100 text-green-700",
+            "idle":    "bg-stone-100 text-stone-500",
+        }.get(self.status, "bg-stone-100 text-stone-500")
+
+    @property
+    def bar_class(self):
+        return {
+            "firing":  "bg-orange-400",
+            "cooling": "bg-blue-300",
+            "done":    "bg-green-400",
+            "idle":    "bg-stone-300",
+        }.get(self.status, "bg-stone-300")
+
+    @property
+    def is_firing(self):
+        return self.status == "firing"

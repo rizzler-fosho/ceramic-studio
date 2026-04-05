@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.humanize",
     # Our app
     "ceramics",
 ]
@@ -63,6 +64,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "ceramics.context_processors.kilns",
             ],
         },
     },
@@ -102,6 +104,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 # Anthropic / Claude
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
+
+# Kiln IoT API — set in .env to require Bearer auth on POST /api/kilns/<n>/
+KILN_API_KEY = os.environ.get("KILN_API_KEY", "")
 
 # Auth
 LOGIN_URL = "/accounts/login/"
