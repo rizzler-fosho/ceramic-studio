@@ -1,0 +1,181 @@
+{% extends "ceramics/base.html" %}
+{% block title %}Add Photo · {{ piece.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <!-- Breadcrumb -->
+  <nav class="text-sm text-stone-400 mb-6 flex items-center gap-2 flex-wrap">
+    <a href="{% url 'dashboard' %}" class="hover:text-clay transition">My Collections</a>
+    <span>›</span>
+    <a href="{{ piece.collection.get_absolute_url }}" class="hover:text-clay transition">
+      {{ piece.collection.name }}
+    </a>
+    <span>›</span>
+    <a href="{{ piece.get_absolute_url }}" class="hover:text-clay transition">{{ piece.title }}</a>
+    <span>›</span>
+    <span class="text-stone-600">Add Photo</span>
+  </nav>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-stone-200 p-8">
+    <h1 class="text-2xl font-bold text-clay-dark mb-1">Add a Photo</h1>
+    <p class="text-stone-500 text-sm mb-8">
+      Upload a photo of <strong>{{ piece.title }}</strong> and Claude will detect the firing stage
+      and write a description for you.
+    </p>
+
+    <form method="post" enctype="multipart/form-data" id="upload-form">
+      {% csrf_token %}
+
+      <!-- ─── Image Upload Zone ─── -->
+      <div class="mb-8">
+        <label class="block text-sm font-medium text-stone-700 mb-2">Photo *</label>
+
+        <!-- Drop zone -->
+        <div id="drop-zone"
+          class="relative border-2 border-dashed border-stone-300 rounded-2xl
+                 hover:border-clay-light cursor-pointer transition bg-stone-50
+                 flex flex-col items-center justify-center min-h-[220px] overflow-hidden">
+
+          <!-- Upload prompt (hidden when image selected) -->
+          <div id="upload-prompt" class="flex flex-col items-center gap-3 py-10 px-6 text-center">
+            <svg class="w-12 h-12 text-stone-300" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+            </svg>
+            <p class="text-stone-500 font-medium">Click or drag photos here</p>
+            <p class="text-stone-400 text-xs">JPEG, PNG, WebP · Select multiple — Claude analyses the first one</p>
+          </div>
+
+          <!-- Image preview (shown after selection) -->
+          <img id="image-preview" src="#" alt="Preview"
+            class="hidden absolute inset-0 w-full h-full object-cover rounded-2xl" />
+
+          <!-- Multi-photo count badge -->
+          <div id="photo-count-badge"
+            class="hidden absolute top-3 right-3 bg-kiln text-white text-xs font-semibold
+                   px-2.5 py-1 rounded-full shadow">
+            <span id="photo-count-num"></span> photos
+          </div>
+
+          <!-- Click anywhere to open picker -->
+          <input type="file" name="images" id="id_images" accept="image/*" required multiple
+            class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+        </div>
+
+        <!-- AI analysis status badge -->
+        <div id="ai-status" class="hidden mt-3 flex items-center gap-2 text-sm">
+          <!-- Spinner state -->
+          <div id="ai-thinking" class="flex items-center gap-2 text-kiln">
+            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+            </svg>
+            Claude is analysing your photo…
+          </div>
+          <!-- Done state -->
+          <div id="ai-done" class="hidden items-center gap-2 text-green-600">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            Fields pre-filled by Claude — feel free to edit them
+          </div>
+          <!-- Error state -->
+          <div id="ai-error" class="hidden items-center gap-2 text-red-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            <span id="ai-error-msg">AI analysis failed — please fill in manually.</span>
+          </div>
+        </div>
+
+        <!-- Confidence badge (shown after AI analysis) -->
+        <div id="confidence-badge" class="hidden mt-2 text-xs text-stone-400 flex items-center gap-1">
+          <svg class="w-3.5 h-3.5 text-kiln" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+          </svg>
+          AI stage confidence: <span id="confidence-value" class="font-medium text-stone-600 ml-1">—</span>
+        </div>
+      </div>
+
+      <!-- ─── Stage ─── -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-stone-700 mb-1.5" for="id_stage">
+          Firing Stage *
+          <span class="text-stone-400 font-normal ml-1">(AI will pre-select — you can change it)</span>
+        </label>
+        <div id="stage-wrapper" class="relative">
+          {{ form.stage }}
+          <!-- AI glow overlay (shows briefly after AI fills in) -->
+          <div id="stage-glow"
+            class="hidden absolute inset-0 rounded-lg pointer-events-none border-2 border-kiln ai-glow"></div>
+        </div>
+        {% if form.stage.errors %}
+          <p class="text-xs text-red-500 mt-1">{{ form.stage.errors|join:", " }}</p>
+        {% endif %}
+      </div>
+
+      <!-- ─── Description ─── -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-stone-700 mb-1.5" for="id_description">
+          Description
+          <span class="text-stone-400 font-normal ml-1">(AI-generated, editable)</span>
+        </label>
+        <div class="relative">
+          {{ form.description }}
+          <div id="desc-glow"
+            class="hidden absolute inset-0 rounded-lg pointer-events-none border-2 border-kiln ai-glow"></div>
+        </div>
+        {% if form.description.errors %}
+          <p class="text-xs text-red-500 mt-1">{{ form.description.errors|join:", " }}</p>
+        {% endif %}
+      </div>
+
+      <!-- ─── Glaze Notes (only shown for glaze stage) ─── -->
+      <div id="glaze-section" class="mb-6 hidden">
+        <label class="block text-sm font-medium text-stone-700 mb-1.5" for="id_glaze_notes">
+          Glaze Analysis
+          <span class="inline-flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full ml-2">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+            </svg>
+            Claude AI
+          </span>
+        </label>
+        <div class="relative">
+          {{ form.glaze_notes }}
+          <div id="glaze-glow"
+            class="hidden absolute inset-0 rounded-lg pointer-events-none border-2 border-blue-400 ai-glow"></div>
+        </div>
+        <p class="text-xs text-stone-400 mt-1">
+          Claude analyses the glaze colour, sheen, texture and likely glaze family.
+        </p>
+      </div>
+
+      <!-- Submit -->
+      <div class="flex gap-3 mt-8">
+        <button type="submit" id="submit-btn"
+          class="flex-1 bg-kiln hover:bg-kiln-dark text-white font-semibold py-3 rounded-xl shadow transition">
+          Save Photo
+        </button>
+        <a href="{{ piece.get_absolute_url }}"
+          class="flex-1 text-center bg-stone-100 hover:bg-stone-200 text-stone-600 font-semibold py-3 rounded-xl transition">
+          Done — View Piece
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Pass Django data to JS
+  const ANALYZE_URL = "{% url 'analyze-image' %}";
+  const CSRF_TOKEN  = "{{ csrf_token }}";
+  const PIECE_TITLE = "{{ piece.title|escapejs }}";
+</script>
+<script src="/static/ceramics/js/ai_upload.js"></script>
+{% endblock %}

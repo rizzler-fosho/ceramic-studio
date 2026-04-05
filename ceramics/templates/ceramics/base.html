@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}My Collections{% endblock %} · Ceramics Portfolio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            clay:   { DEFAULT: '#c2855b', light: '#e8c9a8', dark: '#8b5a3a' },
+            kiln:   { DEFAULT: '#e07b39', dark: '#b5601e' },
+            ash:    { DEFAULT: '#6b7280' },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .ai-glow { animation: glow 1.5s ease-in-out infinite alternate; }
+    @keyframes glow {
+      from { box-shadow: 0 0 4px #e07b39; }
+      to   { box-shadow: 0 0 12px #e07b39, 0 0 24px #c2855b; }
+    }
+    .stage-badge-greenware { background:#d6cfc7; color:#4a3728; }
+    .stage-badge-bisque     { background:#f0e6d3; color:#5c3d1e; }
+    .stage-badge-glaze      { background:#bfdbfe; color:#1e3a5f; }
+  </style>
+</head>
+<body class="h-full bg-stone-50 text-stone-800 flex flex-col">
+
+  <!-- Nav -->
+  <nav class="bg-white border-b border-stone-200 shadow-sm">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="{% url 'dashboard' %}" class="flex items-center gap-2 font-semibold text-clay-dark text-lg tracking-wide">
+        <!-- kiln icon -->
+        <svg class="w-6 h-6 text-kiln" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 3C7.03 3 3 6.13 3 10c0 2.21 1.3 4.17 3.3 5.47V19a1 1 0 001 1h9a1 1 0 001-1v-3.53C19.7 14.17 21 12.21 21 10c0-3.87-4.03-7-9-7z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 21v-4m3 4v-4m3 4v-4"/>
+        </svg>
+        My Collections
+      </a>
+      <div class="flex items-center gap-4 text-sm">
+        {% if user.is_authenticated %}
+          <a href="{% url 'profile' %}" class="text-stone-600 hover:text-clay-dark font-medium transition">{{ user.username }}</a>
+          <a href="{% url 'timeline' %}" class="text-stone-400 hover:text-clay-dark transition text-sm">Timeline</a>
+          <a href="/cms/" class="text-stone-400 hover:text-clay-dark transition text-sm">CMS ↗</a>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit"
+              class="bg-stone-100 hover:bg-stone-200 text-stone-600 px-3 py-1 rounded-lg transition">
+              Sign out
+            </button>
+          </form>
+        {% else %}
+          <a href="{% url 'login' %}"
+            class="bg-kiln hover:bg-kiln-dark text-white px-4 py-1.5 rounded-lg transition">
+            Sign in
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- Messages -->
+  {% if messages %}
+  <div class="max-w-5xl mx-auto w-full px-4 pt-4">
+    {% for message in messages %}
+      <div class="mb-2 px-4 py-3 rounded-lg text-sm
+        {% if message.tags == 'error' %}bg-red-100 text-red-700
+        {% elif message.tags == 'success' %}bg-green-100 text-green-700
+        {% else %}bg-amber-100 text-amber-700{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Main content -->
+  <main class="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="text-center text-xs text-stone-400 py-4">
+    Ceramics Portfolio · Powered by Claude AI
+  </footer>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

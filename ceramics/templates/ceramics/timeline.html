@@ -1,0 +1,90 @@
+{% extends "ceramics/base.html" %}
+{% block title %}{{ month_name }} · Timeline{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-bold text-clay-dark">My Timeline</h1>
+      <p class="text-stone-500 mt-1 text-sm">Pieces by the month they were started</p>
+    </div>
+    <a href="{% url 'dashboard' %}"
+       class="text-sm text-stone-400 hover:text-clay-dark transition">
+      ← Collections
+    </a>
+  </div>
+
+  <!-- Month nav -->
+  <div class="flex items-center justify-between bg-white rounded-2xl border border-stone-200 shadow-sm px-6 py-4 mb-4">
+    <a href="{% url 'timeline-month' prev_year prev_month %}"
+       class="flex items-center gap-1 text-stone-500 hover:text-clay-dark transition px-3 py-1.5 rounded-lg hover:bg-stone-100">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Prev
+    </a>
+    <h2 class="text-xl font-bold text-clay-dark tracking-wide">{{ month_name }}</h2>
+    <a href="{% url 'timeline-month' next_year next_month %}"
+       class="flex items-center gap-1 text-stone-500 hover:text-clay-dark transition px-3 py-1.5 rounded-lg hover:bg-stone-100">
+      Next
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- Calendar -->
+  <div class="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+
+    <!-- Day-of-week headers -->
+    <div class="grid grid-cols-7 border-b border-stone-100">
+      <div class="py-3 text-center text-xs font-semibold text-stone-400 uppercase tracking-wide">Mon</div>
+      <div class="py-3 text-center text-xs font-semibold text-stone-400 uppercase tracking-wide">Tue</div>
+      <div class="py-3 text-center text-xs font-semibold text-stone-400 uppercase tracking-wide">Wed</div>
+      <div class="py-3 text-center text-xs font-semibold text-stone-400 uppercase tracking-wide">Thu</div>
+      <div class="py-3 text-center text-xs font-semibold text-stone-400 uppercase tracking-wide">Fri</div>
+      <div class="py-3 text-center text-xs font-semibold text-stone-400 uppercase tracking-wide">Sat</div>
+      <div class="py-3 text-center text-xs font-semibold text-stone-400 uppercase tracking-wide">Sun</div>
+    </div>
+
+    <!-- Weeks -->
+    {% for week in grid %}
+      <div class="grid grid-cols-7 border-b border-stone-100 last:border-b-0">
+        {% for cell in week %}
+          {% if cell.day %}
+            <div class="min-h-[90px] p-2 border-r border-stone-100 last:border-r-0
+                        {% if cell.is_today %}bg-amber-50 ring-inset ring-1 ring-kiln{% endif %}">
+              <!-- Day number -->
+              <div class="text-xs font-semibold mb-1.5
+                          {% if cell.is_today %}text-kiln{% else %}text-stone-400{% endif %}">
+                {{ cell.day }}
+              </div>
+              <!-- Piece chips -->
+              {% for piece in cell.pieces %}
+                <a href="{{ piece.get_absolute_url }}"
+                   title="{{ piece.title }}"
+                   class="block text-xs leading-tight px-1.5 py-0.5 mb-0.5 rounded
+                          bg-clay-light/50 hover:bg-clay-light text-clay-dark
+                          truncate transition">
+                  {{ piece.title|truncatechars:16 }}
+                </a>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="min-h-[90px] bg-stone-50/60 border-r border-stone-100 last:border-r-0"></div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endfor %}
+
+  </div>
+
+  <!-- Legend -->
+  <p class="text-center text-xs text-stone-400 mt-4">
+    Each chip marks the day a piece was started. Click to open the piece.
+  </p>
+
+</div>
+{% endblock %}

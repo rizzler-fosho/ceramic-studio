@@ -1,0 +1,46 @@
+{% extends "ceramics/base.html" %}
+{% block title %}{{ action }}{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <nav class="text-sm text-stone-400 mb-6 flex items-center gap-2">
+    <a href="{% url 'dashboard' %}" class="hover:text-clay transition">My Collections</a>
+    <span>›</span>
+    <a href="{{ collection.get_absolute_url }}" class="hover:text-clay transition">{{ collection.name }}</a>
+    <span>›</span>
+    <span class="text-stone-600">{{ action }}</span>
+  </nav>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-stone-200 p-8">
+    <h1 class="text-2xl font-bold text-clay-dark mb-2">{{ action }}</h1>
+    <p class="text-stone-500 text-sm mb-6">Give your piece a name — you'll add photos next.</p>
+
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="mb-5">
+          <label class="block text-sm font-medium text-stone-700 mb-1.5">
+            {{ field.label }}
+            {% if field.field.required %}<span class="text-red-400 ml-0.5">*</span>{% endif %}
+          </label>
+          {{ field }}
+          {% if field.errors %}
+            <p class="text-xs text-red-500 mt-1">{{ field.errors|join:", " }}</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <div class="flex gap-3 mt-8">
+        <button type="submit"
+          class="flex-1 bg-kiln hover:bg-kiln-dark text-white font-semibold py-2.5 rounded-xl transition">
+          Save &amp; Add Photos →
+        </button>
+        <a href="{{ collection.get_absolute_url }}"
+          class="flex-1 text-center bg-stone-100 hover:bg-stone-200 text-stone-600 font-semibold py-2.5 rounded-xl transition">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

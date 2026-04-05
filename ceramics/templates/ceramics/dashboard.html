@@ -1,0 +1,81 @@
+{% extends "ceramics/base.html" %}
+{% block title %}My Collections{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-8">
+  <div>
+    <h1 class="text-3xl font-bold text-clay-dark">My Collections</h1>
+    <p class="text-stone-500 mt-1">Track your ceramic pieces through every firing stage</p>
+  </div>
+  <a href="{% url 'collection-create' %}"
+    class="inline-flex items-center gap-2 bg-kiln hover:bg-kiln-dark text-white font-semibold px-5 py-2.5 rounded-xl shadow transition">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+    </svg>
+    New Collection
+  </a>
+</div>
+
+{% if collections %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for collection in collections %}
+    <a href="{{ collection.get_absolute_url }}"
+      class="group bg-white rounded-2xl shadow-sm border border-stone-200 hover:shadow-md hover:border-clay-light transition overflow-hidden">
+      <!-- Cover mosaic: show up to 4 latest piece images -->
+      <div class="h-40 bg-stone-100 grid overflow-hidden
+        {% if collection.pieces.count >= 2 %}grid-cols-2{% else %}grid-cols-1{% endif %}">
+        {% for piece in collection.pieces.all|slice:":4" %}
+          {% if piece.cover_image %}
+            <div class="overflow-hidden">
+              <img src="{{ piece.cover_image.url }}" alt="{{ piece.title }}"
+                class="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+            </div>
+          {% else %}
+            <div class="flex items-center justify-center bg-clay-light/30">
+              <svg class="w-10 h-10 text-clay-light" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3 9.5C3 7.015 7.03 5 12 5s9 2.015 9 4.5v5C21 16.985 16.97 19 12 19S3 16.985 3 14.5v-5z"/>
+              </svg>
+            </div>
+          {% endif %}
+        {% empty %}
+          <div class="col-span-2 flex items-center justify-center bg-stone-100">
+            <p class="text-stone-400 text-sm">No pieces yet</p>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="p-4">
+        <h2 class="font-semibold text-lg text-clay-dark group-hover:text-kiln transition">
+          {{ collection.name }}
+        </h2>
+        {% if collection.description %}
+          <p class="text-stone-500 text-sm mt-1 line-clamp-2">{{ collection.description }}</p>
+        {% endif %}
+        <p class="text-stone-400 text-xs mt-2">
+          {{ collection.pieces.count }} piece{{ collection.pieces.count|pluralize }}
+        </p>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+{% else %}
+  <!-- Empty state -->
+  <div class="text-center py-24 bg-white rounded-2xl border border-dashed border-stone-300">
+    <svg class="w-16 h-16 mx-auto text-stone-300 mb-4" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M3 9.5C3 7.015 7.03 5 12 5s9 2.015 9 4.5v5C21 16.985 16.97 19 12 19S3 16.985 3 14.5v-5z"/>
+    </svg>
+    <h2 class="text-xl font-semibold text-stone-600 mb-2">No collections yet</h2>
+    <p class="text-stone-400 mb-6">Create your first collection to start tracking your ceramic pieces.</p>
+    <a href="{% url 'collection-create' %}"
+      class="inline-flex items-center gap-2 bg-kiln hover:bg-kiln-dark text-white font-semibold px-6 py-3 rounded-xl transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Create your first collection
+    </a>
+  </div>
+{% endif %}
+{% endblock %}

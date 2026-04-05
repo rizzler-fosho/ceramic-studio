@@ -1,0 +1,62 @@
+{% extends "ceramics/base.html" %}
+{% block title %}{{ request.user.username }} · Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+
+  <!-- Profile card -->
+  <div class="bg-white rounded-2xl border border-stone-200 shadow-sm p-8 mb-6">
+    <div class="flex items-start gap-6">
+
+      <!-- Avatar -->
+      {% if profile.avatar %}
+        <img src="{{ profile.avatar.url }}"
+             alt="{{ request.user.username }}"
+             class="w-24 h-24 rounded-full object-cover border-4 border-clay-light shadow shrink-0" />
+      {% else %}
+        <div class="w-24 h-24 rounded-full bg-clay text-white flex items-center justify-center
+                    text-3xl font-bold border-4 border-clay-light shadow shrink-0 select-none">
+          {{ request.user.username|first|upper }}
+        </div>
+      {% endif %}
+
+      <!-- Info -->
+      <div class="flex-1 min-w-0">
+        <h1 class="text-2xl font-bold text-clay-dark">{{ request.user.username }}</h1>
+        <p class="text-stone-400 text-sm mt-0.5">
+          Member since {{ profile.user.date_joined|date:"F Y" }}
+        </p>
+        {% if profile.bio %}
+          <p class="text-stone-600 mt-3 leading-relaxed">{{ profile.bio }}</p>
+        {% else %}
+          <p class="text-stone-400 italic mt-3 text-sm">No bio yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="mt-6 flex gap-3">
+      <a href="{% url 'profile-edit' %}"
+         class="bg-stone-100 hover:bg-stone-200 text-stone-600 font-medium px-5 py-2 rounded-xl text-sm transition">
+        Edit Profile
+      </a>
+      <a href="{% url 'timeline' %}"
+         class="bg-clay-light/40 hover:bg-clay-light text-clay-dark font-medium px-5 py-2 rounded-xl text-sm transition">
+        My Timeline
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-2 gap-4 mb-6">
+    <div class="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 text-center">
+      <div class="text-4xl font-bold text-clay-dark">{{ total_collections }}</div>
+      <div class="text-stone-500 text-sm mt-1">Collection{{ total_collections|pluralize }}</div>
+    </div>
+    <div class="bg-white rounded-2xl border border-stone-200 shadow-sm p-6 text-center">
+      <div class="text-4xl font-bold text-clay-dark">{{ total_pieces }}</div>
+      <div class="text-stone-500 text-sm mt-1">Piece{{ total_pieces|pluralize }}</div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

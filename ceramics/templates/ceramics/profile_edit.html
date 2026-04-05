@@ -1,0 +1,84 @@
+{% extends "ceramics/base.html" %}
+{% block title %}Edit Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+  <nav class="text-sm text-stone-400 mb-6 flex items-center gap-2">
+    <a href="{% url 'profile' %}" class="hover:text-clay transition">Profile</a>
+    <span>›</span>
+    <span class="text-stone-600">Edit</span>
+  </nav>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-stone-200 p-8">
+    <h1 class="text-2xl font-bold text-clay-dark mb-6">Edit Profile</h1>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- Avatar -->
+      <div class="mb-8">
+        <label class="block text-sm font-medium text-stone-700 mb-3">Photo</label>
+        <div class="flex items-center gap-5">
+          {% if profile.avatar %}
+            <img id="avatar-preview"
+                 src="{{ profile.avatar.url }}"
+                 alt="Avatar"
+                 class="w-20 h-20 rounded-full object-cover border-4 border-clay-light shadow" />
+          {% else %}
+            <div id="avatar-initials"
+                 class="w-20 h-20 rounded-full bg-clay text-white flex items-center justify-center
+                        text-2xl font-bold border-4 border-clay-light shadow select-none">
+              {{ request.user.username|first|upper }}
+            </div>
+            <img id="avatar-preview" src="#" alt="Avatar"
+                 class="hidden w-20 h-20 rounded-full object-cover border-4 border-clay-light shadow" />
+          {% endif %}
+          <div>
+            {{ form.avatar }}
+            <label for="id_avatar"
+                   class="cursor-pointer inline-block bg-stone-100 hover:bg-stone-200
+                          text-stone-600 px-4 py-2 rounded-lg text-sm font-medium transition">
+              Choose photo
+            </label>
+            <p class="text-xs text-stone-400 mt-1">JPEG, PNG, WebP</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bio -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-stone-700 mb-1.5">Bio</label>
+        {{ form.bio }}
+        {% if form.bio.errors %}
+          <p class="text-xs text-red-500 mt-1">{{ form.bio.errors|join:", " }}</p>
+        {% endif %}
+      </div>
+
+      <div class="flex gap-3 mt-8">
+        <button type="submit"
+                class="flex-1 bg-kiln hover:bg-kiln-dark text-white font-semibold py-2.5 rounded-xl transition">
+          Save changes
+        </button>
+        <a href="{% url 'profile' %}"
+           class="flex-1 text-center bg-stone-100 hover:bg-stone-200 text-stone-600 font-semibold py-2.5 rounded-xl transition">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.getElementById('id_avatar').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const preview  = document.getElementById('avatar-preview');
+    const initials = document.getElementById('avatar-initials');
+    preview.src = URL.createObjectURL(file);
+    preview.classList.remove('hidden');
+    if (initials) initials.classList.add('hidden');
+  });
+</script>
+{% endblock %}
